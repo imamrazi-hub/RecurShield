@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: recurshield-prod
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: recurshield-config
+  namespace: recurshield-prod
+data:
+  RECOMMENDER_URL: http://recommender:8001
+  REDIS_URL: redis://redis:6379/0

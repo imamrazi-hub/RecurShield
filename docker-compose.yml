@@ -1,0 +1,37 @@
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: recurshield
+      POSTGRES_USER: recurshield
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U recurshield -d recurshield"]
+      interval: 5s
+      retries: 20
+  redis:
+    image: redis:7-alpine
+    command: ["redis-server", "--save", "", "--appendonly", "no"]
+  recommender:
+    build: ./recommender
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8001/health')"]
+      interval: 10s
+      retries: 5
+  core-api:
+    build: ./api
+    environment:
+      DATABASE_URL: postgresql+psycopg://recurshield:${POSTGRES_PASSWORD}@db:5432/recurshield
+      RECOMMENDER_URL: http://recommender:8001
+      REDIS_URL: redis://redis:6379/0
+    depends_on:
+      db: {condition: service_healthy}
+      recommender: {condition: service_started}
+  frontend:
+    build: ./frontend
+    ports: ["8080:8080"]
+    depends_on: [core-api]
+volumes:
+  postgres_data:

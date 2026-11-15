@@ -1,0 +1,25 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata: {name: recommender, namespace: recurshield-prod}
+spec:
+  replicas: 1
+  selector: {matchLabels: {app: recommender}}
+  template:
+    metadata: {labels: {app: recommender}}
+    spec:
+      containers:
+      - name: recommender
+        image: recurshield-midpoint-starter-recommender:latest
+        imagePullPolicy: IfNotPresent
+        ports: [{containerPort: 8001}]
+        readinessProbe: {httpGet: {path: /health, port: 8001}, initialDelaySeconds: 3}
+        resources:
+          requests: {cpu: 25m, memory: 64Mi}
+---
+apiVersion: v1
+kind: Service
+metadata: {name: recommender, namespace: recurshield-prod}
+spec:
+  selector: {app: recommender}
+  ports: [{port: 8001, targetPort: 8001}]
+  type: ClusterIP
